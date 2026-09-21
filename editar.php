@@ -5,7 +5,7 @@ require "db.php";
 $id = (int) ($_GET['id'] ?? 0);
 
 if ($id === 0) {
-    header("Location: index.php?mensaje=Película no encontrada");
+    header("Location: index.php?mensaje=" . urlencode("Película no encontrada"));
     exit;
 }
 
@@ -15,15 +15,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $titulo = trim($_POST['titulo'] ?? '');
     $director = trim($_POST['director'] ?? '');
     $genero = trim($_POST['genero'] ?? '');
-    $anio = trim($_POST['anio'] ?? '');
-    $duracion = trim($_POST['duracion'] ?? '');
-
+    // Convertimos a entero para evitar fallos de formato con la base de datos
+    $anio = (int) ($_POST['anio'] ?? 0);
+    $duracion = (int) ($_POST['duracion'] ?? 0);
 
     if ($titulo === '') $errores[] = "El título es obligatorio.";
     if ($director === '') $errores[] = "Este campo es obligatorio.";
     if ($genero === '') $errores[] = "Este campo es obligatorio.";
-    if ($anio === '') $errores[] = "Este campo es obligatorio.";
-    if ($duracion === '') $errores[] = "Este campo es obligatorio.";
+    if ($anio === 0) $errores[] = "El año debe ser un número válido.";
+    if ($duracion === 0) $errores[] = "La duración debe ser un número válido.";
 
     if (empty($errores)) {
         $stmt = $pdo->prepare("UPDATE peliculas SET titulo = :titulo, director = :director, genero = :genero, anio = :anio, duracion = :duracion WHERE id = :id");
@@ -36,17 +36,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ':id' => $id,
         ]);
 
-        header("Location: index.php?mensaje=Película actualizada correctamente");
+        // Usamos urlencode para proteger el texto en la redirección
+        header("Location: index.php?mensaje=" . urlencode("Película actualizada correctamente"));
         exit;
     }
 } else {
-
     $stmt = $pdo->prepare("SELECT * FROM peliculas WHERE id = :id");
     $stmt->execute([':id' => $id]);
     $pelicula = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$pelicula) {
-        header("Location: index.php?mensaje=Película no encontrada");
+        header("Location: index.php?mensaje=" . urlencode("Película no encontrada"));
         exit;
     }
 }
